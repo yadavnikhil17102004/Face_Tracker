@@ -1,7 +1,9 @@
 import cv2
 import time
 import os
+import numpy as np
 from dotenv import load_dotenv
+from head_pose_estimator import HeadPoseEstimator
 
 """
 Simple Face Tracking Application
@@ -28,6 +30,12 @@ CONFIG = {
     'show_fps': True,              # Whether to display FPS counter
     'flip_horizontal': True,       # Flip the camera horizontally (mirror mode)
     
+    # Head pose estimation settings
+    'enable_head_pose': True,      # Whether to enable head pose estimation
+    'show_pose_axes': True,        # Whether to show pose axes
+    'show_looking_status': True,   # Whether to show if face is looking at camera
+    'landmark_model': 'models/shape_predictor_68_face_landmarks.dat',  # Path to dlib landmark model
+    
     # Face count warning settings (loaded from .env file)
     'max_face_count': int(os.getenv('MAX_FACE_COUNT', 1)),  # Maximum number of faces before showing warning
     'face_count_warning_message': os.getenv('FACE_COUNT_WARNING_MESSAGE', 'Warning: Too many faces detected!'),
@@ -49,6 +57,22 @@ def main():
         print("Error: Could not load face cascade classifier")
         return
     
+    # Initialize head pose estimator if enabled
+    head_pose_estimator = None
+    if CONFIG['enable_head_pose']:
+        try:
+            # Check if the landmark model file exists
+            if not os.path.exists(CONFIG['landmark_model']):
+                print(f"Warning: Landmark model file not found at {CONFIG['landmark_model']}")
+                print("Run download_models.py to download the required model files.")
+                CONFIG['enable_head_pose'] = False
+            else:
+                head_pose_estimator = HeadPoseEstimator(CONFIG['landmark_model'])
+                print("Head pose estimation enabled.")
+        except Exception as e:
+            print(f"Error initializing head pose estimator: {e}")
+            CONFIG['enable_head_pose'] = False
+    
     # Initialize the webcam
     cap = cv2.VideoCapture(CONFIG['camera_id'])
     
@@ -61,7 +85,11 @@ def main():
         print("Error: Could not open webcam")
         return
     
-    print("Face tracker started. Press 'q' to quit.")
+    print("Face tracker started.")
+    print("Controls:")
+    print("  'q' - Quit the application")
+    print("  'p' - Toggle head pose estimation")
+    print("  'a' - Toggle pose axes display")
     
     # Variables for FPS calculation
     fps = 0
@@ -102,6 +130,33 @@ def main():
                 CONFIG['box_color'], 
                 CONFIG['box_thickness']
             )
+            
+            # Estimate head pose if enabled
+            if CONFIG['enable_head_pose'] and head_pose_estimator is not None:
+                # Pass the face rectangle to the head pose estimator
+                face_rect = (x, y, w, h)
+                
+                # Get facial landmarks
+                landmarks = head_pose_estimator.get_landmarks(gray, face_rect)
+                
+                if landmarks is not None:
+                    # Estimate head pose
+                    success, rotation_vector, translation_vector, euler_angles = \
+                        head_pose_estimator.get_pose(gray, landmarks)
+                    
+                    if success:
+                        # Determine if face is looking at camera
+                        is_looking = head_pose_estimator.is_looking_at_camera(euler_angles)
+                        
+                        # Draw pose information if configured
+                        if CONFIG['show_pose_axes'] or CONFIG['show_looking_status']:
+                            head_pose_estimator.draw_pose_info(
+                                frame, 
+                                rotation_vector, 
+                                translation_vector, 
+                                euler_angles,
+                                is_looking if CONFIG['show_looking_status'] else None
+                            )
         
         # Calculate and display FPS
         frame_count += 1
@@ -155,9 +210,19 @@ def main():
         # Display the resulting frame
         cv2.imshow('Face Tracker', frame)
         
-        # Exit if 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        # Process key presses
+        key = cv2.waitKey(1) & 0xFF
+        
+        if key == ord('q'):  # Quit
             break
+        elif key == ord('p'):  # Toggle head pose estimation
+            CONFIG['enable_head_pose'] = not CONFIG['enable_head_pose']
+            status = "enabled" if CONFIG['enable_head_pose'] else "disabled"
+            print(f"Head pose estimation {status}")
+        elif key == ord('a'):  # Toggle pose axes display
+            CONFIG['show_pose_axes'] = not CONFIG['show_pose_axes']
+            status = "enabled" if CONFIG['show_pose_axes'] else "disabled"
+            print(f"Pose axes display {status}")
     
     # Release the webcam and close all OpenCV windows
     cap.release()

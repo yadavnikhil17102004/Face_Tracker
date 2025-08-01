@@ -15,6 +15,8 @@ This repository includes two versions:
 - Configurable parameters for easy customization
 - Mirror mode (horizontal flip) for intuitive interaction
 - Face count warning when too many faces are detected (configurable via .env)
+- Head pose estimation to determine if a face is looking at the camera
+- Visual indicators showing pitch, yaw, and roll angles
 
 ### Advanced Face Tracker
 All features from the simple version, plus:
@@ -25,12 +27,17 @@ All features from the simple version, plus:
 - Enhanced statistics tracking
 - Organized screenshot storage
 - Face count warning with customizable threshold and message
+- Advanced head pose estimation controls
+- Toggle head pose estimation on/off (press 'p')
+- Toggle pose axes display on/off (press 'a')
 
 ## Requirements
 
 - Python 3.6 or higher
 - OpenCV library
 - python-dotenv (for configuration)
+- numpy (for numerical operations)
+- scipy (for mathematical functions)
 - A working webcam
 
 ## Installation
@@ -42,6 +49,14 @@ All features from the simple version, plus:
 ```bash
 pip install -r requirements.txt
 ```
+
+3. Create the models directory (optional):
+
+```bash
+python download_models.py
+```
+
+This will create the models directory for future model files if needed.
 
 ## Usage
 
@@ -74,7 +89,10 @@ Or use the provided batch file (Windows):
 run_face_tracker.bat
 ```
 
-Press 'q' to quit the application.
+**Controls:**
+- Press 'q' to quit the application
+- Press 'p' to toggle head pose estimation on/off
+- Press 'a' to toggle pose axes display on/off
 
 ### Advanced Face Tracker
 Run the advanced face tracker application:
@@ -94,6 +112,8 @@ run_advanced_face_tracker.bat
 - Press 's' to take a screenshot
 - Press 'h' to toggle help text display
 - Press 'e' to toggle eye detection on/off
+- Press 'p' to toggle head pose estimation on/off
+- Press 'a' to toggle pose axes display on/off
 
 ## Configuration
 
@@ -112,6 +132,13 @@ You can customize the simple face tracker by modifying the `CONFIG` dictionary i
 | `min_neighbors` | How many neighbors each candidate rectangle should have | 5 |
 | `show_fps` | Whether to display FPS counter | True |
 | `flip_horizontal` | Flip the camera horizontally (mirror mode) | True |
+
+#### Head Pose Estimation Settings
+| Parameter | Description | Default Value |
+|-----------|-------------|---------------|
+| `enable_head_pose` | Whether to enable head pose estimation | True |
+| `show_pose_axes` | Whether to show pose axes | True |
+| `show_looking_status` | Whether to show if face is looking at camera | True |
 
 ### Advanced Face Tracker
 The advanced face tracker has additional configuration options in the `CONFIG` dictionary in the `advanced_face_tracker.py` file:
@@ -167,6 +194,16 @@ The basic process for both versions:
 4. Draws rectangles around detected faces
 5. Displays the processed frame with face counts and FPS
 
+### Head Pose Estimation
+The application uses a simplified approach to estimate head pose using OpenCV only:
+
+1. Facial landmarks are estimated based on face geometry detected by OpenCV's face detector
+2. Six key points (nose tip, chin, eye corners, mouth corners) are approximated from the face rectangle
+3. The solvePnP algorithm from OpenCV calculates rotation and translation vectors
+4. These vectors are converted to Euler angles (pitch, yaw, roll)
+5. The application determines if a face is looking at the camera based on angle thresholds
+6. Visual indicators show the head's orientation with 3D axes and angle values
+
 ### Eye Detection (Advanced Version)
 The advanced version also uses a Haar Cascade classifier specifically trained for eye detection. For each detected face:
 1. A region of interest (ROI) is extracted from the face area
@@ -192,11 +229,13 @@ Some ideas for further extending this application:
 - Add face recognition to identify specific people
 - Track faces across frames to assign consistent IDs
 - Add emotion detection to recognize facial expressions
-- Implement facial landmark detection (nose, mouth, etc.)
+- Enhance the head pose estimation with more accurate models
 - Add age and gender estimation
 - Create a recording feature to save video
 - Implement motion detection to only track when movement occurs
 - Add a GUI for adjusting settings without modifying code
+- Implement attention tracking based on gaze direction
+- Add blink detection using eye aspect ratio
 
 ## License
 
