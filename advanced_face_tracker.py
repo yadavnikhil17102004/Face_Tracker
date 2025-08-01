@@ -2,6 +2,7 @@ import cv2
 import time
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 
 """
 Advanced Face Tracking Application
@@ -14,6 +15,9 @@ This program extends the basic face tracker with additional features:
 
 Configuration parameters are at the top of the file for easy customization.
 """
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configuration parameters - modify these to customize the application
 CONFIG = {
@@ -45,6 +49,15 @@ CONFIG = {
     # Screenshot settings
     'screenshot_dir': 'screenshots',  # Directory to save screenshots
     'screenshot_format': 'jpg',      # Format to save screenshots (jpg or png)
+    
+    # Face count warning settings (loaded from .env file)
+    'max_face_count': int(os.getenv('MAX_FACE_COUNT', 1)),  # Maximum number of faces before showing warning
+    'face_count_warning_message': os.getenv('FACE_COUNT_WARNING_MESSAGE', 'Warning: Too many faces detected!'),
+    'warning_text_color': (
+        int(os.getenv('WARNING_TEXT_COLOR_B', 0)),
+        int(os.getenv('WARNING_TEXT_COLOR_G', 0)),
+        int(os.getenv('WARNING_TEXT_COLOR_R', 255))
+    ),
 }
 
 
@@ -203,6 +216,18 @@ def main():
         # Display max faces detected
         draw_text(frame, f"Max Faces: {max_faces_in_frame}", (10, y_position))
         y_position += 30
+        
+        # Display warning if face count exceeds the configured limit
+        if face_count > CONFIG['max_face_count']:
+            draw_text(
+                frame,
+                CONFIG['face_count_warning_message'],
+                (10, y_position),
+                color=CONFIG['warning_text_color'],
+                size=CONFIG['text_size'] * 1.2,  # Make warning slightly larger
+                thickness=CONFIG['text_thickness']
+            )
+            y_position += 30
         
         # Display help text if configured
         if CONFIG['show_help']:

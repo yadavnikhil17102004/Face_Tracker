@@ -14,6 +14,7 @@ This repository includes two versions:
 - Face counter showing number of detected faces
 - Configurable parameters for easy customization
 - Mirror mode (horizontal flip) for intuitive interaction
+- Face count warning when too many faces are detected (configurable via .env)
 
 ### Advanced Face Tracker
 All features from the simple version, plus:
@@ -23,11 +24,13 @@ All features from the simple version, plus:
 - Toggle eye detection on/off (press 'e')
 - Enhanced statistics tracking
 - Organized screenshot storage
+- Face count warning with customizable threshold and message
 
 ## Requirements
 
 - Python 3.6 or higher
 - OpenCV library
+- python-dotenv (for configuration)
 - A working webcam
 
 ## Installation
@@ -41,6 +44,22 @@ pip install -r requirements.txt
 ```
 
 ## Usage
+
+### Configuration
+You can customize the face count warning by editing the `.env` file in the project root:
+
+```
+# Maximum number of faces before showing warning
+MAX_FACE_COUNT=3
+
+# Warning message to display when face count exceeds limit
+FACE_COUNT_WARNING_MESSAGE="Warning: Too many faces detected!"
+
+# Warning text color (BGR format)
+WARNING_TEXT_COLOR_B=0
+WARNING_TEXT_COLOR_G=0
+WARNING_TEXT_COLOR_R=255
+```
 
 ### Simple Face Tracker
 Run the simple face tracker application:
