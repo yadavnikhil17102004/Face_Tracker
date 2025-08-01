@@ -1,0 +1,2 @@
+# Dependencies for Face Tracker application
+opencv-python>=4.5.0
